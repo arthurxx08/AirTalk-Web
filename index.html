@@ -1,8 +1,68 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="AirTalk"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icons/icon-192.png"><link rel="stylesheet" href="./style.css"><title>AirTalk</title></head>
-<body><main class="app"><header><div class="brand"><span class="mark">A</span><div><h1>AirTalk</h1><small>Audio route test · Web edition</small></div></div><span id="status" class="pill">待機中</span></header>
-<section class="intro"><h2>AirPods 音声テスト</h2><p>マイクの音をそのままAirPodsなどの出力先へ流し、入出力の同時動作を確認します。</p></section>
-<section class="panel"><h3>1. マイク入力・モニタリング</h3><p>AirPodsを接続してマイクを開始し、「モニタリング開始」を押してください。自分の声が出力先から聞こえるか確認します。</p><div class="meter"><div id="meterFill"></div></div><div class="row"><span>入力レベル</span><b id="level">--</b></div><button id="micButton" class="primary">マイクを開始</button><div class="monitorActions"><button id="monitorButton" class="secondary" disabled>モニタリング開始</button></div><small id="monitorState">マイク開始後に使用できます</small><small id="micState">マイク未許可</small></section>
-<section class="panel"><h3>2. 音声出力</h3><p>テスト音がAirPodsから聞こえるか確認してください。</p><div class="actions"><button id="toneButton" class="secondary">440Hz テスト音を再生</button><button id="stopButton" class="ghost" disabled>停止</button></div><small id="outputState">出力テスト未実施</small></section>
-<section class="panel"><h3>3. 音声デバイス情報</h3><div class="row"><span>入力デバイス</span><b id="inputRoute">未確認</b></div><div class="row"><span>出力先</span><b id="outputRoute">iOSが選択</b></div><button id="refreshButton" class="ghost">情報を更新</button></section>
-<section class="notice"><b>重要な制約</b><p>iPhoneのSafariでは、AirPodsの左右イヤホンを別々のマイク・スピーカーとして自由に指定できるとは限りません。この版はマイク音声を現在の出力先へ流すテスト機能です。左右のイヤホンを別々に指定する機能や、2人用の双方向通話機能はまだありません。モニタリング中はハウリング防止のため音量を控えめにしてください。</p></section><footer>AirTalk Web v0.2 · GitHub Pages</footer></main><script src="./app.js"></script></body></html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AirTalk">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./style.css">
+<title>AirTalk</title>
+</head>
+<body>
+<main class="app">
+<header><div class="brand"><span class="mark">A</span><div><h1>AirTalk</h1><small>Input route experiment</small></div></div><span id="status" class="pill">待機中</span></header>
+<section class="intro"><h2>マイク切替テスト</h2><p>AirPodsの左右マイクをアプリから切り替えられるか、iOSが公開する入力デバイスを調べます。</p></section>
+
+<section class="panel">
+<h3>1. 入力デバイス選択</h3>
+<p>マイクを開始すると、iOS/Safariが公開している入力デバイスを一覧表示します。左右が別々に表示された場合は、ここで切り替えを試せます。</p>
+<label for="inputSelect">使用するマイク</label>
+<select id="inputSelect" class="deviceSelect"><option value="">マイク開始後に読み込み</option></select>
+<button id="micButton" class="primary">マイクを開始</button>
+<button id="switchButton" class="secondary" disabled>選択したマイクに切替</button>
+<div class="meter"><div id="meterFill"></div></div>
+<div class="row"><span>入力レベル</span><b id="level">--</b></div>
+<small id="inputInfo">入力デバイス情報を待っています</small>
+<small id="micState">マイク未許可</small>
+</section>
+
+<section class="panel">
+<h3>2. 入力診断</h3>
+<div class="row"><span>検出入力数</span><b id="inputCount">--</b></div>
+<small id="trackInfo">未取得</small>
+<small id="capabilityInfo">未取得</small>
+<p class="hint">左右マイクが別々の入力として表示されるかが重要です。AirPodsが1つの入力としてしか表示されない場合、Safariから左右を個別指定することはできません。</p>
+</section>
+
+<section class="panel">
+<h3>3. マイクモニタリング</h3>
+<p>取得中のマイク音声をAirPodsなどの出力先へ流します。</p>
+<button id="monitorButton" class="secondary" disabled>モニタリング開始</button>
+<div class="volumeControl"><label for="monitorVolume">モニタリング音量 <b id="monitorVolumeValue">150%</b></label><input id="monitorVolume" type="range" min="0" max="2" step="0.05" value="1.5"></div>
+<small id="monitorState">マイク開始後に使用できます</small>
+</section>
+
+<section class="panel">
+<h3>4. 音声出力テスト</h3>
+<div class="actions"><button id="toneButton" class="secondary">440Hz テスト音</button><button id="stopButton" class="ghost" disabled>停止</button></div>
+<div class="volumeControl"><label for="toneVolume">テスト音量 <b id="toneVolumeValue">4%</b></label><input id="toneVolume" type="range" min="0" max="0.15" step="0.005" value="0.04"></div>
+<small id="outputState">出力テスト未実施</small>
+</section>
+
+<section class="panel">
+<h3>5. デバイス情報</h3>
+<div class="row"><span>入力デバイス</span><b id="inputRoute">未確認</b></div>
+<div class="row"><span>出力先</span><b id="outputRoute">iOSが選択</b></div>
+<button id="refreshButton" class="ghost">情報を更新</button>
+</section>
+
+<section class="notice"><b>この版で確認すること</b><p>WebアプリからiPhoneのBluetooth設定にある「マイク：左/右」を直接変更する機能は、通常のSafari Web APIにはありません。この版では、Safariが公開する入力デバイスを選択し、deviceIdを指定して入力を切り替えます。左右が1つの入力としてしか公開されない場合、アプリ内切替はできません。その場合はiOS側の制約と判断できます。</p></section>
+<footer>AirTalk Web v0.4 · Microphone input switching experiment</footer>
+</main>
+<script src="./app.js"></script>
+</body>
+</html>
