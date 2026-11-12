@@ -30,7 +30,7 @@
 
 <section class="panel talkPanel">
   <h3>通話モード</h3>
-  <p>ボタンを押すと、その人のマイクに切り替わります。もう一度押すとマイクを停止します。</p>
+  <p>ボタンを押すと、その人のマイクに切り替わります。切替時は新しいマイクを先に接続し、AirPodsの出力経路が途切れにくい方式に変更しています。もう一度押すとマイクを停止します。</p>
   <button id="selfButton" class="talk self" disabled><span class="talkTitle">自分が話す</span><span class="talkSub">iPhoneマイク → AirPods左</span></button>
   <button id="otherButton" class="talk other" disabled><span class="talkTitle">相手が話す</span><span class="talkSub">AirPodsマイク → AirPods右</span></button>
   <div class="activeMode" id="activeMode">通話モード：停止中</div>
@@ -56,8 +56,8 @@
   <button id="refreshButton" class="ghost">デバイス情報を更新</button>
 </section>
 
-<section class="notice"><b>重要：この版の動作上の注意</b><p>このアプリはSafariが公開する入力デバイスをdeviceIdで切り替え、Web Audio APIで音声を左／右に振り分けます。iOSがAirPodsマイク使用中にBluetooth音声をモノラル化したり、出力ルートを変更した場合、左右分離が成立しないことがあります。また、これは同時通話ではなく、1本のマイクを交互に使う半二重方式です。最初は音量を低くして確認してください。</p></section>
-<footer>AirTalk Web v0.5 · iPhone / AirPods input switch</footer>
+<section class="notice"><b>重要：この版の動作上の注意</b><p>このアプリはSafariが公開する入力デバイスをdeviceIdで切り替え、Web Audio APIで音声を左／右に振り分けます。入力切替は新しい入力を接続してから古い入力を停止する方式にし、切替中にAirPodsの音声出力経路が解放されるリスクを減らしています。iOSがAirPodsマイク使用中にBluetooth音声をモノラル化したり、出力ルートを変更した場合、左右分離が成立しないことがあります。また、これは同時通話ではなく、1本のマイクを交互に使う半二重方式です。最初は音量を低くして確認してください。</p></section>
+<footer>AirTalk Web v0.6 · route-preserving input switch</footer>
 </main>
 <script src="./app.js"></script>
 </body>
