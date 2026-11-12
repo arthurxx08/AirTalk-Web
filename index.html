@@ -15,11 +15,11 @@
 <body>
 <main class="app">
 <header><div class="brand"><span class="mark">A</span><div><h1>AirTalk</h1><small>Two-person audio routing</small></div></div><span id="status" class="pill">待機中</span></header>
-<section class="intro"><h2>2人用マイク切替</h2><p>iPhoneマイクとAirPodsマイクを切り替え、選択中の音声をAirPodsの左右チャンネルへ出力します。</p></section>
+<section class="intro"><h2>2人用マイク切替・音声経路改善</h2><p>iPhoneマイクとAirPodsマイクを切り替え、選択中の音声をAirPodsの左右チャンネルへ出力します。</p></section>
 
 <section class="panel setup">
   <h3>接続設定</h3>
-  <p>AirPodsのiPhone設定は「マイク：常に右」に固定してください。マイク一覧を取得するため、最初に一度マイクを許可します。</p>
+  <p>AirPodsのiPhone設定は「マイク：常に右」に固定してください。マイク一覧を取得するため、最初に一度マイクを許可します。AirPodsは「マイク：常に右」に固定してください。</p>
   <button id="initButton" class="primary">マイクを許可してデバイスを読み込む</button>
   <div class="deviceGrid">
     <div><label for="phoneInput">自分側：iPhoneマイク</label><select id="phoneInput" class="deviceSelect"><option value="">未取得</option></select></div>
@@ -30,13 +30,13 @@
 
 <section class="panel talkPanel">
   <h3>通話モード</h3>
-  <p>ボタンを押すと、その人のマイクに切り替わります。切替時は新しいマイクを先に接続し、AirPodsの出力経路が途切れにくい方式に変更しています。もう一度押すとマイクを停止します。</p>
+  <p>ボタンを押すと、その人のマイクに切り替わります。もう一度押すとマイクを停止します。</p>
   <button id="selfButton" class="talk self" disabled><span class="talkTitle">自分が話す</span><span class="talkSub">iPhoneマイク → AirPods左</span></button>
   <button id="otherButton" class="talk other" disabled><span class="talkTitle">相手が話す</span><span class="talkSub">AirPodsマイク → AirPods右</span></button>
   <div class="activeMode" id="activeMode">通話モード：停止中</div>
   <div class="meter"><div id="meterFill"></div></div>
   <div class="row"><span>入力レベル</span><b id="level">--</b></div>
-  <small id="micState">まだマイクは起動していません。</small>
+  <small id="micState">まだマイクは起動していません。入力切替時も出力グラフを維持します。</small>
 </section>
 
 <section class="panel">
@@ -44,7 +44,7 @@
   <div class="volumeControl"><label for="voiceVolume">音声出力音量 <b id="voiceVolumeValue">35%</b></label><input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="0.35"></div>
   <div class="actions"><button id="leftTest" class="secondary">左だけテスト</button><button id="rightTest" class="secondary">右だけテスト</button></div>
   <button id="stopButton" class="ghost" disabled>マイクを停止</button>
-  <small id="outputState">出力先はiOSが選択します。AirPods接続中にテストしてください。</small>
+  <small id="outputState">出力先はiOSが選択します。AirPods接続中にテストしてください。440HzはAudioContext再開後に再生します。</small>
 </section>
 
 <section class="panel">
@@ -56,8 +56,8 @@
   <button id="refreshButton" class="ghost">デバイス情報を更新</button>
 </section>
 
-<section class="notice"><b>重要：この版の動作上の注意</b><p>このアプリはSafariが公開する入力デバイスをdeviceIdで切り替え、Web Audio APIで音声を左／右に振り分けます。入力切替は新しい入力を接続してから古い入力を停止する方式にし、切替中にAirPodsの音声出力経路が解放されるリスクを減らしています。iOSがAirPodsマイク使用中にBluetooth音声をモノラル化したり、出力ルートを変更した場合、左右分離が成立しないことがあります。また、これは同時通話ではなく、1本のマイクを交互に使う半二重方式です。最初は音量を低くして確認してください。</p></section>
-<footer>AirTalk Web v0.6 · route-preserving input switch</footer>
+<section class="notice"><b>重要：この版の動作上の注意</b><p>このアプリはSafariが公開する入力デバイスをdeviceIdで切り替え、Web Audio APIで音声を左／右に振り分けます。入力切替時は新しい入力の取得・接続後に古い入力を停止し、AudioContextと出力グラフを維持します。エコーキャンセルとノイズ抑制を有効にしています。iOSがAirPodsマイク使用中にBluetooth音声をモノラル化したり、出力ルートを変更した場合、左右分離が成立しないことがあります。また、これは同時通話ではなく、1本のマイクを交互に使う半二重方式です。最初は音量を低くして確認してください。</p></section>
+<footer>AirTalk Web v0.7 · stable audio graph</footer>
 </main>
 <script src="./app.js"></script>
 </body>

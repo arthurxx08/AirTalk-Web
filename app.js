@@ -52,6 +52,7 @@ async function initialize() {
     temp.getTracks().forEach(t => t.stop());
     await getInputs();
     await ensureAudio();
+    $('channelInfo').textContent = `AudioContext: ${audioCtx.state}`;
     $('micState').textContent = '準備完了。自分／相手のボタンでマイクを切り替えられます。';
     $('initButton').textContent = 'デバイス情報を再取得';
     setStatus('準備完了');
@@ -85,32 +86,62 @@ async function activate(mode) {
   const id = mode === 'self' ? $('phoneInput').value : $('airpodsInput').value;
   const label = mode === 'self' ? 'iPhoneマイク' : 'AirPodsマイク';
   if (!id) { $('micState').textContent = `${label}が選択されていません。デバイス一覧を確認してください。`; return; }
+
+  let nextStream = null;
+  let nextSource = null;
   try {
     setStatus('入力切替中');
     await ensureAudio();
-    stopCurrentStream();
-    // 明示したdeviceIdで入力を取得。iOSが別ルートへ変更する可能性はある。
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id }, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    activeTrack = stream.getAudioTracks()[0];
-    source = audioCtx.createMediaStreamSource(stream);
+
+    // 先に新しい入力を取得する。取得に失敗しても現在の入力と出力グラフを壊さない。
+    nextStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        deviceId: { exact: id },
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: false
+      }
+    });
+
+    nextSource = audioCtx.createMediaStreamSource(nextStream);
     buildOutputGraph();
     panner.pan.setValueAtTime(mode === 'self' ? -1 : 1, audioCtx.currentTime);
-    source.connect(voiceGain);
-    startMeter();
+    nextSource.connect(voiceGain);
+
+    // 新入力が接続できてから旧入力を解放する。AudioContext / 出力グラフは維持。
+    const oldStream = stream;
+    const oldSource = source;
+    const oldAnalyser = analyser;
+    if (meterFrame) cancelAnimationFrame(meterFrame);
+    meterFrame = null;
+    if (oldSource) { try { oldSource.disconnect(); } catch (_) {} }
+    if (oldAnalyser) { try { oldAnalyser.disconnect(); } catch (_) {} }
+    if (oldStream) oldStream.getTracks().forEach(t => t.stop());
+
+    stream = nextStream;
+    source = nextSource;
+    analyser = null;
+    activeTrack = stream.getAudioTracks()[0];
     activeMode = mode;
+
+    startMeter();
     $('selfButton').classList.toggle('selected', mode === 'self');
     $('otherButton').classList.toggle('selected', mode === 'other');
-    $('activeMode').textContent = mode === 'self' ? '自分モード：iPhoneマイク → 左チャンネル' : '相手モード：AirPodsマイク → 右チャンネル';
-    $('micState').textContent = `${label}で入力中。別の人のボタンを押すと切り替わります。`;
+    $('activeMode').textContent = mode === 'self'
+      ? '自分モード：iPhoneマイク → 左チャンネル'
+      : '相手モード：AirPodsマイク → 右チャンネル';
+    $('micState').textContent = `${label}で入力中。入力レベルが動き、AirPodsから音声が聞こえるか確認してください。`;
     const settings = activeTrack.getSettings ? activeTrack.getSettings() : {};
-    $('trackInfo').textContent = `取得中：${activeTrack.label || label} / channelCount: ${settings.channelCount ?? '不明'} / sampleRate: ${settings.sampleRate ?? '不明'}`;
-    $('channelInfo').textContent = `Web Audio pan：${mode === 'self' ? '左 (-1)' : '右 (+1)'}`;
+    $('trackInfo').textContent = `取得中：${activeTrack.label || label} / channelCount: ${settings.channelCount ?? '不明'} / sampleRate: ${settings.sampleRate ?? '不明'} / echoCancellation: ${settings.echoCancellation ?? '不明'}`;
+    $('channelInfo').textContent = `Web Audio pan：${mode === 'self' ? '左 (-1)' : '右 (+1)'} / AudioContext: ${audioCtx.state}`;
     $('stopButton').disabled = false;
     setStatus(mode === 'self' ? '自分モード' : '相手モード');
   } catch (e) {
-    stopCurrentStream(); activeMode = null;
-    $('micState').textContent = `切替失敗：${e.name || e.message}。入力デバイスの選択とSafariのマイク許可を確認してください。`;
-    $('activeMode').textContent = '通話モード：停止中'; setStatus('切替エラー');
+    // 新入力の取得失敗時は既存入力を維持する。
+    if (nextSource) { try { nextSource.disconnect(); } catch (_) {} }
+    if (nextStream) nextStream.getTracks().forEach(t => t.stop());
+    $('micState').textContent = `切替失敗：${e.name || e.message}。現在の入力は可能な限り維持しています。`;
+    setStatus('切替エラー');
   }
 }
 function stopAll() {
@@ -121,14 +152,15 @@ function stopAll() {
   $('channelInfo').textContent = '出力チャンネル：未選択'; $('stopButton').disabled = true;
   setStatus('停止中');
 }
-function playChannelTest(side) {
+async function playChannelTest(side) {
   try {
-    ensureAudio(); stopTest(); buildOutputGraph();
+    await ensureAudio();
+    stopTest(); buildOutputGraph();
     testOsc = audioCtx.createOscillator(); testGain = audioCtx.createGain();
     testOsc.frequency.value = 440; testGain.gain.value = 0.035;
     const testPan = audioCtx.createStereoPanner(); testPan.pan.value = side === 'left' ? -1 : 1;
     testOsc.connect(testGain); testGain.connect(testPan); testPan.connect(audioCtx.destination); testOsc.start();
-    $('outputState').textContent = `${side === 'left' ? '左' : '右'}チャンネルから440Hzを再生中（もう一度同じボタンで停止）`;
+    $('outputState').textContent = `${side === 'left' ? '左' : '右'}チャンネルから440Hzを再生中 / AudioContext: ${audioCtx.state}（もう一度同じボタンで停止）`;
     $('leftTest').disabled = side === 'left'; $('rightTest').disabled = side === 'right';
   } catch (e) { $('outputState').textContent = `再生エラー：${e.message}`; }
 }
